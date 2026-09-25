@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Programme {
+  id          String    @id @default(uuid())
+  name        String
+  code        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  students    Student[]
+  courses     Course[]
+}
+
+model Student {
+  id          String          @id @default(uuid())
+  rollNumber  String          @unique
+  name        String
+  email       String          @unique
+  programmeId String
+  programme   Programme       @relation(fields: [programmeId], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  enrollments ExamEnrollment[]
+  marks       Mark[]
+  results     Result[]
+}
+
+model Course {
+  id                  String               @id @default(uuid())
+  code                String               @unique
+  name                String
+  maxMarks            Int
+  programmeId         String
+  programme           Programme            @relation(fields: [programmeId], references: [id])
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  assessmentComponents AssessmentComponent[]
+  enrollments         ExamEnrollment[]
+  marks               Mark[]
+  examinationCourses  ExaminationCourse[]
+}
+
+model Examination {
+  id              String               @id @default(uuid())
+  name            String
+  semester        String
+  academicYear    String
+  startDate       DateTime
+  endDate         DateTime
+  status          ExaminationStatus    @default(DRAFT)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  examinationCourses ExaminationCourse[]
+  enrollments     ExamEnrollment[]
+  marks           Mark[]
+  results         Result[]
+}
+
+enum ExaminationStatus {
+  DRAFT
+  ACTIVE
+  PROCESSING
+  CALCULATED
+  PUBLISHED
+}
+
+model ExaminationCourse {
+  id            String      @id @default(uuid())
+  examinationId String
+  courseId     String
+  examination   Examination @relation(fields: [examinationId], references: [id])
+  course       Course      @relation(fields: [courseId], references: [id])
+
+  @@unique([examinationId, courseId])
+}
+
+model AssessmentComponent {
+  id        String   @id @default(uuid())
+  courseId  String
+  name      String
+  maxMarks  Int
+  weightage Int
+  course    Course   @relation(fields: [courseId], references: [id])
+  marks     Mark[]
+
+  @@unique([courseId, name])
+}
+
+model ExamEnrollment {
+  id            String      @id @default(uuid())
+  examId        String
+  studentId     String
+  courseId      String
+  examination   Examination @relation(fields: [examId], references: [id])
+  student       Student     @relation(fields: [studentId], references: [id])
+  course        Course      @relation(fields: [courseId], references: [id])
+  createdAt     DateTime    @default(now())
+
+  @@unique([examId, studentId, courseId])
+}
+
+model Mark {
+  id          String               @id @default(uuid())
+  examId      String
+  studentId   String
+  courseId    String
+  componentId String
+  value       Float
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  examination Examination          @relation(fields: [examId], references: [id])
+  student     Student              @relation(fields: [studentId], references: [id])
+  course      Course               @relation(fields: [courseId], references: [id])
+  component   AssessmentComponent  @relation(fields: [componentId], references: [id])
+
+  @@unique([examId, studentId, courseId, componentId])
+  @@index([studentId])
+  @@index([examId])
+  @@index([courseId])
+  @@index([componentId])
+}
+
+model Result {
+  id          String      @id @default(uuid())
+  examId      String
+  studentId   String
+  totalMarks  Float
+  maximumMarks Float
+  percentage  Float
+  grade       String
+  status      String
+  publishedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  examination Examination @relation(fields: [examId], references: [id])
+  student     Student     @relation(fields: [studentId], references: [id])
+
+  @@unique([examId, studentId])
+  @@index([examId])
+  @@index([studentId])
+}
+
+model ImportJob {
+  id          String   @id @default(uuid())
+  fileName    String
+  status      String   @default("QUEUED")
+  total       Int      @default(0)
+  processed   Int      @default(0)
+  successful  Int      @default(0)
+  failed      Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
