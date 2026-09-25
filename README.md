@@ -65,7 +65,7 @@ The local account is intentionally lightweight and stored in browser local stora
 - `POST /api/examinations/:examId/courses`
 - `POST /api/examinations/:examId/enrollments`
 - `POST /api/marks`
-- `POST /api/marks/import`
+- `POST /api/marks/import` with multipart field `file` containing a `.csv` file
 - `GET /api/marks/import/:jobId`
 - `POST /api/examinations/:examId/results/calculate`
 - `POST /api/examinations/:examId/results/publish`
@@ -97,6 +97,41 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/university_exam?schem
 ```
 
 PostgreSQL is required for CSV queue processing and import-job status. The setup and result APIs currently use in-memory repositories while the database integration phase is being completed.
+
+CSV imports are streamed by the worker and processed in progress batches. The expected header is:
+```csv
+examId,studentId,courseId,componentId,value
+```
+Excel and Google Sheets files should be exported as CSV before upload.
+
+## Database access
+With PostgreSQL running and `api/.env` configured:
+```bash
+cd api
+npm run db:migrate
+```
+
+Open Prisma Studio to browse and edit tables:
+```bash
+cd api
+npm run db:studio
+```
+
+It normally opens at `http://localhost:5555`. You can also inspect tables directly with PostgreSQL:
+```bash
+PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d university_exam
+```
+
+Useful commands inside `psql`:
+```sql
+\dt
+\d "Student"
+SELECT * FROM "Programme";
+SELECT * FROM "Result";
+\q
+```
+
+The initial migration is stored under `api/prisma/migrations/`.
 
 ## Docker
 ```bash

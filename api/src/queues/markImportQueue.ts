@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { readFile, unlink } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { unlink } from 'node:fs/promises';
+import { parse } from 'csv-parse';
 import { PgBoss } from 'pg-boss';
 import { env } from '../config/env';
 import { importJobRepository } from '../repositories/importJobRepository';
@@ -58,32 +60,41 @@ export async function getMarkImportStatus(importJobId: string) {
 
 async function processImport(data: MarkImportJob): Promise<void> {
   await importJobRepository.updateProgress(data.importJobId, { status: 'PROCESSING' });
-  const content = await readFile(data.filePath, 'utf8');
-  const rows = content.split(/\r?\n/).filter(Boolean);
-  const dataRows = rows[0]?.toLowerCase().includes('examid') ? rows.slice(1) : rows;
+  const parser = createReadStream(data.filePath).pipe(parse({
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+  }));
   let successful = 0;
   let failed = 0;
+  let total = 0;
 
-  await importJobRepository.updateProgress(data.importJobId, { total: dataRows.length });
-
-  for (const row of dataRows) {
-    const [examId, studentId, courseId, componentId, value] = row.split(',').map((item) => item.trim());
+  for await (const row of parser) {
+    total += 1;
     try {
-      await markService.createMark({ examId, studentId, courseId, componentId, value: Number(value) });
+      const record = row as Record<string, string>;
+      await markService.createMark({
+        examId: record.examId,
+        studentId: record.studentId,
+        courseId: record.courseId,
+        componentId: record.componentId,
+        value: Number(record.value),
+      });
       successful += 1;
     } catch {
       failed += 1;
     }
-    await importJobRepository.updateProgress(data.importJobId, {
-      processed: successful + failed,
-      successful,
-      failed,
-    });
+    if (total % 500 === 0) {
+      await importJobRepository.updateProgress(data.importJobId, { total, processed: total, successful, failed });
+    }
   }
 
   await importJobRepository.updateProgress(data.importJobId, {
     status: 'COMPLETED',
-    processed: successful + failed,
+    total,
+    processed: total,
+    successful,
+    failed,
   });
   await unlink(data.filePath).catch(() => undefined);
 }

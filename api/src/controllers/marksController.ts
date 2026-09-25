@@ -1,9 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { markService } from '../services/markService';
 import { enqueueMarkImport, getMarkImportStatus } from '../queues/markImportQueue';
-import { writeFile } from 'node:fs/promises';
-import { randomUUID } from 'node:crypto';
-import path from 'node:path';
 
 export const createMark = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -38,16 +35,12 @@ export const listMarks = async (_req: Request, res: Response, next: NextFunction
 
 export const queueBulkImport = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const fileName = String(req.body.fileName ?? 'marks.csv');
-    const csvContent = String(req.body.csvContent ?? '');
-    if (!csvContent.trim()) {
-      res.status(400).json({ success: false, error: { message: 'csvContent is required' } });
+    if (!req.file) {
+      res.status(400).json({ success: false, error: { message: 'A CSV file is required in the file field' } });
       return;
     }
 
-    const filePath = path.join('/tmp', `marks-${randomUUID()}.csv`);
-    await writeFile(filePath, csvContent, 'utf8');
-    const jobId = await enqueueMarkImport(fileName, filePath);
+    const jobId = await enqueueMarkImport(req.file.originalname, req.file.path);
     res.status(202).json({ success: true, data: { jobId, status: 'QUEUED' } });
   } catch (error) {
     next(error);
