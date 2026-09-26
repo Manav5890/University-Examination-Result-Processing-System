@@ -18,7 +18,7 @@ export const programmeService = {
       throw new BadRequestError('Programme code already exists');
     }
 
-    return programmeRepository.create(input);
+    return programmeRepository.create({ ...input, description: input.description ?? null });
   },
 
   async listProgrammes() {

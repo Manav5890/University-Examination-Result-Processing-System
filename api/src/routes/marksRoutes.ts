@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createMark, getBulkImportStatus, listMarks, queueBulkImport, updateMark } from '../controllers/marksController';
+import { cancelBulkImport, createMark, getBulkImportStatus, listMarks, queueBulkImport, updateMark } from '../controllers/marksController';
 import { markCsvUpload } from '../middleware/upload';
 
 export const markRoutes = Router();
@@ -9,3 +9,5 @@ markRoutes.put('/:id', updateMark);
 markRoutes.get('/', listMarks);
 markRoutes.post('/import', markCsvUpload.single('file'), queueBulkImport);
 markRoutes.get('/import/:jobId', getBulkImportStatus);
+markRoutes.post('/import/:jobId/cancel', cancelBulkImport);
+

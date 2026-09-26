@@ -1,3 +1,5 @@
+import { prisma } from '../config/database';
+
 export type EnrollmentRecord = {
   id: string;
   examId: string;
@@ -6,32 +8,15 @@ export type EnrollmentRecord = {
   createdAt: Date;
 };
 
-const enrollments: EnrollmentRecord[] = [];
-
 export const enrollmentRepository = {
   findManyByExamId: async (examId: string): Promise<EnrollmentRecord[]> =>
-    enrollments.filter((enrollment) => enrollment.examId === examId),
+    prisma.examEnrollment.findMany({ where: { examId } }),
 
   findByExamStudentCourse: async (
     examId: string,
     studentId: string,
     courseId: string,
-  ): Promise<EnrollmentRecord | undefined> =>
-    enrollments.find(
-      (enrollment) =>
-        enrollment.examId === examId &&
-        enrollment.studentId === studentId &&
-        enrollment.courseId === courseId,
-    ),
+  ): Promise<EnrollmentRecord | undefined> => (await prisma.examEnrollment.findUnique({ where: { examId_studentId_courseId: { examId, studentId, courseId } } })) ?? undefined,
 
-  create: async (data: Omit<EnrollmentRecord, 'id' | 'createdAt'>): Promise<EnrollmentRecord> => {
-    const item: EnrollmentRecord = {
-      id: crypto.randomUUID(),
-      ...data,
-      createdAt: new Date(),
-    };
-
-    enrollments.push(item);
-    return item;
-  },
+  create: async (data: Omit<EnrollmentRecord, 'id' | 'createdAt'>): Promise<EnrollmentRecord> => prisma.examEnrollment.create({ data }),
 };

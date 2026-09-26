@@ -1,3 +1,5 @@
+import { prisma } from '../config/database';
+
 export type ResultRecord = {
   id: string;
   examId: string;
@@ -6,48 +8,26 @@ export type ResultRecord = {
   maximumMarks: number;
   percentage: number;
   grade: string;
-  status: 'PASS' | 'FAIL';
-  publishedAt?: Date;
+  status: string;
+  publishedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
 
-const results: ResultRecord[] = [];
-
 export const resultRepository = {
   findManyByExamId: async (examId: string): Promise<ResultRecord[]> =>
-    results.filter((result) => result.examId === examId),
+    prisma.result.findMany({ where: { examId } }),
 
   upsert: async (
     data: Omit<ResultRecord, 'id' | 'createdAt' | 'updatedAt' | 'publishedAt'>,
-  ): Promise<ResultRecord> => {
-    const existing = results.find(
-      (result) => result.examId === data.examId && result.studentId === data.studentId,
-    );
-    const now = new Date();
-
-    if (existing) {
-      Object.assign(existing, data, { updatedAt: now });
-      return existing;
-    }
-
-    const item: ResultRecord = {
-      id: crypto.randomUUID(),
-      ...data,
-      createdAt: now,
-      updatedAt: now,
-    };
-    results.push(item);
-    return item;
-  },
+  ): Promise<ResultRecord> => prisma.result.upsert({
+    where: { examId_studentId: { examId: data.examId, studentId: data.studentId } },
+    create: { ...data, publishedAt: null },
+    update: data,
+  }),
 
   publishByExamId: async (examId: string): Promise<ResultRecord[]> => {
-    const publishedAt = new Date();
-    const examResults = results.filter((result) => result.examId === examId);
-    examResults.forEach((result) => {
-      result.publishedAt = publishedAt;
-      result.updatedAt = publishedAt;
-    });
-    return examResults;
+    await prisma.result.updateMany({ where: { examId }, data: { publishedAt: new Date() } });
+    return prisma.result.findMany({ where: { examId } });
   },
 };

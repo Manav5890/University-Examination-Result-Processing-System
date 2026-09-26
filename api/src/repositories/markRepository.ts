@@ -1,3 +1,5 @@
+import { prisma } from '../config/database';
+
 export type MarkRecord = {
   id: string;
   examId: string;
@@ -9,56 +11,22 @@ export type MarkRecord = {
   updatedAt: Date;
 };
 
-const marks: MarkRecord[] = [];
-
 export const markRepository = {
-  findMany: async (): Promise<MarkRecord[]> => [...marks],
+  findMany: async (): Promise<MarkRecord[]> => prisma.mark.findMany(),
 
-  findById: async (id: string): Promise<MarkRecord | undefined> =>
-    marks.find((mark) => mark.id === id),
+  findById: async (id: string): Promise<MarkRecord | undefined> => (await prisma.mark.findUnique({ where: { id } })) ?? undefined,
 
   findByExamStudentCourseComponent: async (
     examId: string,
     studentId: string,
     courseId: string,
     componentId: string,
-  ): Promise<MarkRecord | undefined> =>
-    marks.find(
-      (mark) =>
-        mark.examId === examId &&
-        mark.studentId === studentId &&
-        mark.courseId === courseId &&
-        mark.componentId === componentId,
-    ),
+  ): Promise<MarkRecord | undefined> => (await prisma.mark.findUnique({ where: { examId_studentId_courseId_componentId: { examId, studentId, courseId, componentId } } })) ?? undefined,
 
   findManyByExamStudent: async (examId: string, studentId: string): Promise<MarkRecord[]> =>
-    marks.filter((mark) => mark.examId === examId && mark.studentId === studentId),
+    prisma.mark.findMany({ where: { examId, studentId } }),
 
-  create: async (data: Omit<MarkRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<MarkRecord> => {
-    const now = new Date();
-    const item: MarkRecord = {
-      id: crypto.randomUUID(),
-      ...data,
-      createdAt: now,
-      updatedAt: now,
-    };
+  create: async (data: Omit<MarkRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<MarkRecord> => prisma.mark.create({ data }),
 
-    marks.push(item);
-    return item;
-  },
-
-  updateById: async (id: string, value: number): Promise<MarkRecord | undefined> => {
-    const index = marks.findIndex((mark) => mark.id === id);
-    if (index === -1) {
-      return undefined;
-    }
-
-    marks[index] = {
-      ...marks[index],
-      value,
-      updatedAt: new Date(),
-    };
-
-    return marks[index];
-  },
+  updateById: async (id: string, value: number): Promise<MarkRecord | undefined> => prisma.mark.update({ where: { id }, data: { value } }).catch(() => undefined),
 };

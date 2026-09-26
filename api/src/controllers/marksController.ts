@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { markService } from '../services/markService';
-import { enqueueMarkImport, getMarkImportStatus } from '../queues/markImportQueue';
+import { cancelMarkImport, enqueueMarkImport, getMarkImportStatus } from '../queues/markImportQueue';
 
 export const createMark = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -59,4 +59,16 @@ export const getBulkImportStatus = async (req: Request, res: Response, next: Nex
     next(error);
   }
 };
+
+export const cancelBulkImport = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const jobId = String(req.params.jobId);
+    await cancelMarkImport(jobId);
+    res.status(200).json({ success: true, data: { jobId, status: 'CANCELLED' } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 

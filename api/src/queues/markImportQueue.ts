@@ -58,6 +58,17 @@ export async function getMarkImportStatus(importJobId: string) {
   return importJobRepository.findById(importJobId);
 }
 
+export async function cancelMarkImport(importJobId: string): Promise<void> {
+  const job = await importJobRepository.findById(importJobId);
+  if (!job) return;
+  if (job.status === 'QUEUED' || job.status === 'PROCESSING') {
+    await importJobRepository.updateProgress(importJobId, {
+      status: 'CANCELLED',
+      errorMessage: 'Job cancelled by user request',
+    });
+  }
+}
+
 async function processImport(data: MarkImportJob): Promise<void> {
   await importJobRepository.updateProgress(data.importJobId, { status: 'PROCESSING' });
   const parser = createReadStream(data.filePath).pipe(parse({
@@ -68,8 +79,17 @@ async function processImport(data: MarkImportJob): Promise<void> {
   let successful = 0;
   let failed = 0;
   let total = 0;
+  let isCancelled = false;
 
   for await (const row of parser) {
+    if (total % 100 === 0) {
+      const currentJob = await importJobRepository.findById(data.importJobId);
+      if (currentJob?.status === 'CANCELLED') {
+        isCancelled = true;
+        break;
+      }
+    }
+
     total += 1;
     try {
       const record = row as Record<string, string>;
@@ -89,12 +109,24 @@ async function processImport(data: MarkImportJob): Promise<void> {
     }
   }
 
-  await importJobRepository.updateProgress(data.importJobId, {
-    status: 'COMPLETED',
-    total,
-    processed: total,
-    successful,
-    failed,
-  });
+  if (isCancelled) {
+    await importJobRepository.updateProgress(data.importJobId, {
+      status: 'CANCELLED',
+      total,
+      processed: total,
+      successful,
+      failed,
+      errorMessage: 'Job cancelled during stream processing',
+    });
+  } else {
+    await importJobRepository.updateProgress(data.importJobId, {
+      status: 'COMPLETED',
+      total,
+      processed: total,
+      successful,
+      failed,
+    });
+  }
+
   await unlink(data.filePath).catch(() => undefined);
 }

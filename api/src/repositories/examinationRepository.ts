@@ -1,3 +1,5 @@
+import { prisma } from '../config/database';
+
 export type ExaminationRecord = {
   id: string;
   name: string;
@@ -10,38 +12,15 @@ export type ExaminationRecord = {
   updatedAt: Date;
 };
 
-const examinations: ExaminationRecord[] = [];
-
 export const examinationRepository = {
-  findMany: async (): Promise<ExaminationRecord[]> => [...examinations],
+  findMany: async (): Promise<ExaminationRecord[]> => prisma.examination.findMany(),
 
-  findById: async (id: string): Promise<ExaminationRecord | undefined> =>
-    examinations.find((examination) => examination.id === id),
+  findById: async (id: string): Promise<ExaminationRecord | undefined> => (await prisma.examination.findUnique({ where: { id } })) ?? undefined,
 
   updateStatus: async (
     id: string,
     status: ExaminationRecord['status'],
-  ): Promise<ExaminationRecord | undefined> => {
-    const examination = examinations.find((item) => item.id === id);
-    if (!examination) {
-      return undefined;
-    }
+  ): Promise<ExaminationRecord | undefined> => prisma.examination.update({ where: { id }, data: { status } }).catch(() => undefined),
 
-    examination.status = status;
-    examination.updatedAt = new Date();
-    return examination;
-  },
-
-  create: async (data: Omit<ExaminationRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<ExaminationRecord> => {
-    const now = new Date();
-    const item: ExaminationRecord = {
-      id: crypto.randomUUID(),
-      ...data,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    examinations.push(item);
-    return item;
-  },
+  create: async (data: Omit<ExaminationRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<ExaminationRecord> => prisma.examination.create({ data }),
 };

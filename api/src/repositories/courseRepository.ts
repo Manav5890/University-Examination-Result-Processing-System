@@ -1,3 +1,5 @@
+import { prisma } from '../config/database';
+
 export type CourseRecord = {
   id: string;
   code: string;
@@ -8,27 +10,12 @@ export type CourseRecord = {
   updatedAt: Date;
 };
 
-const courses: CourseRecord[] = [];
-
 export const courseRepository = {
-  findMany: async (): Promise<CourseRecord[]> => [...courses],
+  findMany: async (): Promise<CourseRecord[]> => prisma.course.findMany(),
 
-  findById: async (id: string): Promise<CourseRecord | undefined> =>
-    courses.find((course) => course.id === id),
+  findById: async (id: string): Promise<CourseRecord | undefined> => (await prisma.course.findUnique({ where: { id } })) ?? undefined,
 
-  findByCode: async (code: string): Promise<CourseRecord | undefined> =>
-    courses.find((course) => course.code === code),
+  findByCode: async (code: string): Promise<CourseRecord | undefined> => (await prisma.course.findUnique({ where: { code } })) ?? undefined,
 
-  create: async (data: Omit<CourseRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<CourseRecord> => {
-    const now = new Date();
-    const item: CourseRecord = {
-      id: crypto.randomUUID(),
-      ...data,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    courses.push(item);
-    return item;
-  },
+  create: async (data: Omit<CourseRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<CourseRecord> => prisma.course.create({ data }),
 };

@@ -1,32 +1,21 @@
+import { prisma } from '../config/database';
+
 export type ExaminationCourseRecord = {
   id: string;
   examinationId: string;
   courseId: string;
-  createdAt: Date;
 };
-
-const examinationCourses: ExaminationCourseRecord[] = [];
 
 export const examinationCourseRepository = {
   findManyByExaminationId: async (examinationId: string): Promise<ExaminationCourseRecord[]> =>
-    examinationCourses.filter((item) => item.examinationId === examinationId),
+    prisma.examinationCourse.findMany({ where: { examinationId } }),
 
   findByExaminationAndCourse: async (
     examinationId: string,
     courseId: string,
-  ): Promise<ExaminationCourseRecord | undefined> =>
-    examinationCourses.find((item) => item.examinationId === examinationId && item.courseId === courseId),
+  ): Promise<ExaminationCourseRecord | undefined> => (await prisma.examinationCourse.findUnique({ where: { examinationId_courseId: { examinationId, courseId } } })) ?? undefined,
 
   create: async (
-    data: Omit<ExaminationCourseRecord, 'id' | 'createdAt'>,
-  ): Promise<ExaminationCourseRecord> => {
-    const item: ExaminationCourseRecord = {
-      id: crypto.randomUUID(),
-      ...data,
-      createdAt: new Date(),
-    };
-
-    examinationCourses.push(item);
-    return item;
-  },
+    data: Omit<ExaminationCourseRecord, 'id'>,
+  ): Promise<ExaminationCourseRecord> => prisma.examinationCourse.create({ data }),
 };

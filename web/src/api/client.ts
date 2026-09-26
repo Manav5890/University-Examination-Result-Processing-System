@@ -36,6 +36,7 @@ export const api = {
     return request<{ jobId: string; status: string }>('/marks/import', { method: 'POST', body: formData });
   },
   getImportStatus: (jobId: string) => request<ImportJob>(`/marks/import/${jobId}`),
+  cancelImport: (jobId: string) => request<{ jobId: string; status: string }>(`/marks/import/${jobId}/cancel`, { method: 'POST' }),
   calculate: (examId: string) => request<Result[]>(`/examinations/${examId}/results/calculate`, { method: 'POST' }),
   publish: (examId: string) => request<Result[]>(`/examinations/${examId}/results/publish`, { method: 'POST' }),
 };

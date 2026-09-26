@@ -12,6 +12,10 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
+    "seed:test-csvs": "node scripts/generate-all-test-csvs.mjs",
+    "seed:10k": "node scripts/seed-10k-import.mjs",
+    "seed:100k": "node scripts/seed-large-import.mjs 100000",
+    "seed:1m": "node scripts/seed-large-import.mjs 1000000",
     "test": "jest --runInBand"
   },
   "keywords": [

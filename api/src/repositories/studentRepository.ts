@@ -1,3 +1,5 @@
+import { prisma } from '../config/database';
+
 export type StudentRecord = {
   id: string;
   rollNumber: string;
@@ -8,27 +10,12 @@ export type StudentRecord = {
   updatedAt: Date;
 };
 
-const students: StudentRecord[] = [];
-
 export const studentRepository = {
-  findMany: async (): Promise<StudentRecord[]> => [...students],
+  findMany: async (): Promise<StudentRecord[]> => prisma.student.findMany(),
 
-  findById: async (id: string): Promise<StudentRecord | undefined> =>
-    students.find((student) => student.id === id),
+  findById: async (id: string): Promise<StudentRecord | undefined> => (await prisma.student.findUnique({ where: { id } })) ?? undefined,
 
-  findByRollNumber: async (rollNumber: string): Promise<StudentRecord | undefined> =>
-    students.find((student) => student.rollNumber === rollNumber),
+  findByRollNumber: async (rollNumber: string): Promise<StudentRecord | undefined> => (await prisma.student.findUnique({ where: { rollNumber } })) ?? undefined,
 
-  create: async (data: Omit<StudentRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<StudentRecord> => {
-    const now = new Date();
-    const item: StudentRecord = {
-      id: crypto.randomUUID(),
-      ...data,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    students.push(item);
-    return item;
-  },
+  create: async (data: Omit<StudentRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<StudentRecord> => prisma.student.create({ data }),
 };
