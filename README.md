@@ -42,7 +42,7 @@ api: routes -> controllers -> services -> repositories -> domain data
              bulk import -> pg-boss -> PostgreSQL -> progress records
 ```
 
-Redis is intentionally not used. `pg-boss` provides durable PostgreSQL-backed jobs, retry handling, and queue locking. The current academic repositories are in-memory, so the demo worker runs in the API process. Once those repositories move fully to Prisma, the worker can be deployed independently and scaled horizontally.
+Redis is intentionally not used. `pg-boss` provides durable PostgreSQL-backed jobs, retry handling, and queue locking. Academic records and import-job records are persisted through Prisma/PostgreSQL. The demo worker currently runs in the API process; it can be deployed independently after moving uploaded files from local temporary storage to shared object storage.
 
 ## Web application
 The web app contains:
@@ -96,13 +96,21 @@ NODE_ENV=development
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/university_exam?schema=public
 ```
 
-PostgreSQL is required for CSV queue processing and import-job status. The setup and result APIs currently use in-memory repositories while the database integration phase is being completed.
+PostgreSQL is required for all API persistence, CSV queue processing, and import-job status.
 
 CSV imports are streamed by the worker and processed in progress batches. The expected header is:
 ```csv
 examId,studentId,courseId,componentId,value
 ```
 Excel and Google Sheets files should be exported as CSV before upload.
+
+A 10,000-row load-test fixture is available at `api/marks-10000.csv`. Its rows use placeholder IDs intentionally, so uploading it without replacing those IDs will produce validation failures while still testing file size, queueing, streaming, progress tracking, and failure handling. Generate a fresh copy with:
+```bash
+cd api
+node scripts/generate-10k-marks-csv.mjs marks-10000.csv
+```
+
+For successful imports, use IDs returned by the setup APIs or download/export a CSV containing real `examId`, `studentId`, `courseId`, and `componentId` values from your current database/workspace. Each mark key (`examId + studentId + courseId + componentId`) must be unique.
 
 ## Database access
 With PostgreSQL running and `api/.env` configured:
