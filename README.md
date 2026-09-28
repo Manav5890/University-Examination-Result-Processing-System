@@ -242,6 +242,21 @@ Processing **100,000+ mark rows** synchronously over a standard HTTP request tak
 
 ---
 
+## Assumptions & Intentionally Incomplete Areas
+
+### Documented Assumptions
+1. **Academic Evaluation Hierarchy**: We assume a course consists of one or more defined `AssessmentComponent` entries (e.g. Internal 30%, Final 70%). A student must have a recorded mark for every defined component in a course before results can be calculated.
+2. **Score Range Boundaries**: Component marks must be non-negative numeric floats bounded by `0 <= value <= component.maxMarks`.
+3. **Student Exam Registration**: Students must be explicitly enrolled in a course for a specific examination sitting (`ExamEnrollment`) before mark ingestion is permitted.
+4. **Local Evaluation Storage**: For single-instance container evaluation (`docker compose up`), temporary CSV uploads are stored on local disk (`uploads/`) and unlinked upon completion.
+
+### Intentionally Incomplete Areas (Scope Boundaries)
+1. **Authentication Infrastructure**: As permitted by the assignment prompt (*"Prioritize correctness and architectural decisions over UI polish... clearly document your assumptions"*), authentication uses lightweight evaluation accounts rather than full multi-tenant OAuth2/OIDC/JWT servers to simplify API testing.
+2. **Notification Subsystems**: Real-time email/SMS alerts to students upon grade publication are omitted to focus on database integrity, transaction safety, and background processing scale.
+3. **Full Student ERP Portal**: Features such as tuition fee tracking, attendance registers, and timetable scheduling are intentionally omitted to focus strictly on the examination and result-processing domain.
+
+---
+
 ## Trade-offs
 
 1. **`pg-boss` (PostgreSQL) vs. Redis (BullMQ)**:
