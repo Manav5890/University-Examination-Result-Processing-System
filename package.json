@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd api && npm install && npm run build && npx prisma db push",
-    "start": "cd api && npm run start"
+    "build": "cd api && npm install && npx prisma generate && tsc -p tsconfig.json && npx prisma db push",
+    "prestart": "cd api && npm run build",
+    "start": "cd api && node dist/server.js"
   }
 }
