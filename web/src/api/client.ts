@@ -49,5 +49,5 @@ export type ExamCourse = { id: string; examinationId: string; courseId: string }
 export type Component = { id: string; name: string; maxMarks: number; weightage: number };
 export type Enrollment = { id: string; examId: string; studentId: string; courseId: string };
 export type Mark = { id: string; examId: string; studentId: string; courseId: string; componentId: string; value: number };
-export type Result = { totalMarks: number; maximumMarks: number; percentage: number; grade: string; status: string; publishedAt?: string };
+export type Result = { id?: string; examId?: string; studentId?: string; totalMarks: number; maximumMarks: number; percentage: number; grade: string; status: string; publishedAt?: string };
 export type ImportJob = { id: string; fileName: string; status: string; total: number; processed: number; successful: number; failed: number; errorMessage?: string };

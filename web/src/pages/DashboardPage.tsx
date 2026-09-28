@@ -485,6 +485,28 @@ export function DashboardPage() {
                         Error Detail: {importJob.errorMessage}
                       </div>
                     )}
+                    {importJob.status === 'COMPLETED' && (
+                      <div style={{ marginTop: '16px', background: '#e2f0e9', border: '1px solid #b8dbc9', borderRadius: '8px', padding: '14px 16px' }}>
+                        <div style={{ fontWeight: '700', fontSize: '14px', color: '#168678', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>🎉 CSV Import Job Completed!</span>
+                          <span style={{ fontSize: '12px', background: '#168678', color: '#fff', padding: '2px 8px', borderRadius: '12px' }}>
+                            {importJob.successful} Marks Ingested
+                          </span>
+                        </div>
+                        <p style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#277462', lineHeight: '1.5' }}>
+                          <strong>Next Required Task:</strong> Go to <strong>Section 03 (Result Processing & Publishing)</strong> above and click <strong style={{ textDecoration: 'underline' }}>Calculate Results</strong> to aggregate marks, calculate percentages, assign letter grades (A, B, C, D, E, F), and update Pass/Fail status.
+                        </p>
+                        <button 
+                          className="primary-button" 
+                          style={{ padding: '8px 14px', fontSize: '12px' }}
+                          onClick={() => {
+                            document.getElementById('results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }}
+                        >
+                          Go to Section 03: Calculate Results ↑
+                        </button>
+                      </div>
+                    )}
                     {(importJob.status === 'QUEUED' || importJob.status === 'PROCESSING') && (
                       <div style={{ marginTop: '12px' }}>
                         <button 
