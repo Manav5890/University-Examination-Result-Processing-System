@@ -1,0 +1,9 @@
+{
+  "name": "university-examination-result-processing-system",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd api && npm install && npm run build && npx prisma db push",
+    "start": "cd api && npm run start"
+  }
+}
